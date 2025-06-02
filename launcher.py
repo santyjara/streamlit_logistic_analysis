@@ -19,6 +19,36 @@ def get_app_path():
     
     return str(app_path)
 
+def get_python_executable():
+    """Get the correct Python executable path"""
+    if getattr(sys, 'frozen', False):
+        # Running as PyInstaller executable - find Python in PATH
+        try:
+            result = subprocess.run(["python", "--version"], 
+                                  capture_output=True, 
+                                  text=True, 
+                                  timeout=5)
+            if result.returncode == 0:
+                return "python"
+        except:
+            pass
+        
+        # Try python3
+        try:
+            result = subprocess.run(["python3", "--version"], 
+                                  capture_output=True, 
+                                  text=True, 
+                                  timeout=5)
+            if result.returncode == 0:
+                return "python3"
+        except:
+            pass
+        
+        return None
+    else:
+        # Running as regular Python script
+        return sys.executable
+
 def check_port_available(port=8501):
     """Check if the port is available"""
     try:
@@ -73,6 +103,14 @@ def launch_streamlit():
         input("Press Enter to exit...")
         return
     
+    # Get Python executable
+    python_exe = get_python_executable()
+    
+    if python_exe is None:
+        print("Error: Python not found. Please install Python and add it to PATH.")
+        input("Press Enter to exit...")
+        return
+    
     # Find available port
     port = find_available_port()
     url = f"http://localhost:{port}"
@@ -82,9 +120,9 @@ def launch_streamlit():
     print(f"Will open: {url}")
     print("Please wait while the app loads...")
     
-    # Prepare streamlit command with proper flags to prevent auto-browser opening
+    # Prepare streamlit command
     cmd = [
-        sys.executable, "-m", "streamlit", "run",
+        python_exe, "-m", "streamlit", "run",
         app_path,
         "--server.port", str(port),
         "--server.headless", "true",
@@ -95,13 +133,13 @@ def launch_streamlit():
     ]
     
     try:
-        # Start browser opener thread that waits for server
+        # Start browser opener thread
         open_browser_when_ready(url)
         
-        # Start Streamlit process using Popen for better control
+        # Start Streamlit process
         print("Starting server...")
         
-        # Create process with suppressed output to prevent console issues
+        # Create process with suppressed output
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -122,7 +160,7 @@ def launch_streamlit():
             process.wait()
             
     except KeyboardInterrupt:
-        print("\n  Shutting down...")
+        print("\n Shutting down...")
     except FileNotFoundError:
         print(" Error: Streamlit not found. Make sure it's installed.")
         print("Try: pip install streamlit")
@@ -132,16 +170,6 @@ def launch_streamlit():
         input("Press Enter to exit...")
 
 if __name__ == "__main__":
-    # Enable console output even in --noconsole mode for debugging
-    if getattr(sys, 'frozen', False):
-        # Allocate console for executable
-        if sys.platform == "win32":
-            import ctypes
-            try:
-                ctypes.windll.kernel32.AllocConsole()
-            except:
-                pass
-    
     print("=" * 50)
     print("Procesador de Archivos - Launcher")
     print("=" * 50)
