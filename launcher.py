@@ -5,6 +5,7 @@ import webbrowser
 import time
 import threading
 from pathlib import Path
+import socket
 
 def get_app_path():
     """Get the path to the Streamlit app file"""
@@ -20,13 +21,12 @@ def get_app_path():
 
 def check_port_available(port=8501):
     """Check if the port is available"""
-    import socket
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind(('localhost', port))
             return True
-        except OSError:
-            return False
+    except OSError:
+        return False
 
 def find_available_port(start_port=8501):
     """Find an available port starting from start_port"""
@@ -37,12 +37,28 @@ def find_available_port(start_port=8501):
         port += 1
     return start_port  # Fallback
 
-def open_browser_delayed(url, delay=3):
-    """Open browser after a delay"""
+def wait_for_server(url, max_attempts=30):
+    """Wait for the Streamlit server to be ready"""
+    import urllib.request
+    import urllib.error
+    
+    for attempt in range(max_attempts):
+        try:
+            urllib.request.urlopen(url, timeout=1)
+            return True
+        except (urllib.error.URLError, OSError):
+            time.sleep(1)
+    return False
+
+def open_browser_when_ready(url):
+    """Open browser only when server is ready"""
     def _open():
-        time.sleep(delay)
-        print(f"Opening browser: {url}")
-        webbrowser.open(url)
+        print("⏳ Waiting for server to start...")
+        if wait_for_server(url):
+            print(f"🌐 Opening browser: {url}")
+            webbrowser.open(url)
+        else:
+            print("❌ Server didn't start in time")
     
     thread = threading.Thread(target=_open)
     thread.daemon = True
@@ -66,34 +82,66 @@ def launch_streamlit():
     print(f"🌐 Will open: {url}")
     print("⏳ Please wait while the app loads...")
     
-    # Prepare streamlit command
+    # Prepare streamlit command with proper flags to prevent auto-browser opening
     cmd = [
         sys.executable, "-m", "streamlit", "run",
         app_path,
         "--server.port", str(port),
         "--server.headless", "true",
+        "--server.runOnSave", "false",
         "--browser.gatherUsageStats", "false",
-        "--server.address", "localhost"
+        "--server.address", "localhost",
+        "--global.developmentMode", "false"
     ]
     
     try:
-        # Start browser opener thread
-        open_browser_delayed(url, delay=4)
+        # Start browser opener thread that waits for server
+        open_browser_when_ready(url)
         
-        # Start Streamlit process
+        # Start Streamlit process using Popen for better control
         print("⚡ Starting server...")
-        process = subprocess.run(cmd, check=False)
         
+        # Create process with suppressed output to prevent console issues
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+        )
+        
+        print("✅ Server started successfully!")
+        print("🔗 App should open in your browser shortly...")
+        print("❗ Close this window to stop the server")
+        
+        # Wait for process to complete or be interrupted
+        try:
+            process.wait()
+        except KeyboardInterrupt:
+            print("\n⏹️  Shutting down...")
+            process.terminate()
+            process.wait()
+            
     except KeyboardInterrupt:
         print("\n⏹️  Shutting down...")
     except FileNotFoundError:
         print("❌ Error: Streamlit not found. Make sure it's installed.")
+        print("Try: pip install streamlit")
         input("Press Enter to exit...")
     except Exception as e:
         print(f"❌ Error starting app: {e}")
         input("Press Enter to exit...")
 
 if __name__ == "__main__":
+    # Enable console output even in --noconsole mode for debugging
+    if getattr(sys, 'frozen', False):
+        # Allocate console for executable
+        if sys.platform == "win32":
+            import ctypes
+            try:
+                ctypes.windll.kernel32.AllocConsole()
+            except:
+                pass
+    
     print("=" * 50)
     print("📊 Procesador de Archivos - Launcher")
     print("=" * 50)
