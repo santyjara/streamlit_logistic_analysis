@@ -28,7 +28,7 @@ jobs:
     - name: Build executable
       run: |
         pyinstaller --onefile --windowed `
-          --add-data ".analysis.py;." `
+          --add-data "analysis.py;." `
           --hidden-import=streamlit `
           --hidden-import=pandas `
           --hidden-import=numpy `
