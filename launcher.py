@@ -53,12 +53,12 @@ def wait_for_server(url, max_attempts=30):
 def open_browser_when_ready(url):
     """Open browser only when server is ready"""
     def _open():
-        print("⏳ Waiting for server to start...")
+        print(" Waiting for server to start...")
         if wait_for_server(url):
-            print(f"🌐 Opening browser: {url}")
+            print(f" Opening browser: {url}")
             webbrowser.open(url)
         else:
-            print("❌ Server didn't start in time")
+            print(" Server didn't start in time")
     
     thread = threading.Thread(target=_open)
     thread.daemon = True
@@ -69,7 +69,7 @@ def launch_streamlit():
     app_path = get_app_path()
     
     if not os.path.exists(app_path):
-        print(f"❌ Error: Streamlit app not found at {app_path}")
+        print(f"Error: Streamlit app not found at {app_path}")
         input("Press Enter to exit...")
         return
     
@@ -77,10 +77,10 @@ def launch_streamlit():
     port = find_available_port()
     url = f"http://localhost:{port}"
     
-    print("🚀 Starting Streamlit App...")
-    print(f"📍 App location: {app_path}")
-    print(f"🌐 Will open: {url}")
-    print("⏳ Please wait while the app loads...")
+    print("Starting Streamlit App...")
+    print(f"App location: {app_path}")
+    print(f"Will open: {url}")
+    print("Please wait while the app loads...")
     
     # Prepare streamlit command with proper flags to prevent auto-browser opening
     cmd = [
@@ -109,26 +109,26 @@ def launch_streamlit():
             creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
         )
         
-        print("✅ Server started successfully!")
-        print("🔗 App should open in your browser shortly...")
-        print("❗ Close this window to stop the server")
+        print("Server started successfully!")
+        print("App should open in your browser shortly...")
+        print("Close this window to stop the server")
         
         # Wait for process to complete or be interrupted
         try:
             process.wait()
         except KeyboardInterrupt:
-            print("\n⏹️  Shutting down...")
+            print("\n Shutting down...")
             process.terminate()
             process.wait()
             
     except KeyboardInterrupt:
-        print("\n⏹️  Shutting down...")
+        print("\n  Shutting down...")
     except FileNotFoundError:
-        print("❌ Error: Streamlit not found. Make sure it's installed.")
+        print(" Error: Streamlit not found. Make sure it's installed.")
         print("Try: pip install streamlit")
         input("Press Enter to exit...")
     except Exception as e:
-        print(f"❌ Error starting app: {e}")
+        print(f"Error starting app: {e}")
         input("Press Enter to exit...")
 
 if __name__ == "__main__":
@@ -143,6 +143,6 @@ if __name__ == "__main__":
                 pass
     
     print("=" * 50)
-    print("📊 Procesador de Archivos - Launcher")
+    print("Procesador de Archivos - Launcher")
     print("=" * 50)
     launch_streamlit()
