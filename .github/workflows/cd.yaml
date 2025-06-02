@@ -30,14 +30,14 @@ jobs:
         pyinstaller --onefile --noconsole --name="StreamlitApp" --add-data="analysis.py;." --hidden-import=streamlit --hidden-import=pandas --hidden-import=numpy --hidden-import=xlsxwriter --hidden-import=openpyxl --hidden-import=PIL --hidden-import=streamlit.web.cli launcher.py
         
     - name: Upload executable as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: windows-executable
         path: dist/*.exe
         
     - name: Create Release (optional)
       if: github.ref == 'refs/heads/main'
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ github.run_number }}
         name: Release v${{ github.run_number }}
