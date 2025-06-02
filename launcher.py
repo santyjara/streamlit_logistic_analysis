@@ -99,7 +99,7 @@ def launch_streamlit():
         open_browser_when_ready(url)
         
         # Start Streamlit process using Popen for better control
-        print("⚡ Starting server...")
+        print("Starting server...")
         
         # Create process with suppressed output to prevent console issues
         process = subprocess.Popen(
